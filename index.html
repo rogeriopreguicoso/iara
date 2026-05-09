@@ -225,23 +225,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--bod
       <div id="homeLoad" class="loading">Carregando dados...</div>
       <div id="homeBody" style="display:none">
 
-        <div class="bal-grid">
-          <div class="bal-card">
-            <div class="bal-lbl">Bipa BRL</div>
-            <div class="bal-val" id="hBipaBRL">—</div>
-          </div>
-          <div class="bal-card">
-            <div class="bal-lbl">Satoshis total</div>
-            <div class="bal-val bl" id="hTotalSAT">—</div>
-          </div>
-          <div class="bal-card full">
-            <div class="bal-lbl">Patrimônio estimado</div>
-            <div class="bal-val gr" id="hPatrimonio" style="font-size:22px">—</div>
-            <div class="bal-sub">SAT × BTC/BRL + Bipa BRL</div>
-          </div>
-        </div>
-
-        <div class="ticker-row">
+        <!-- Cotações -->
+        <div class="ticker-row" style="padding-top:1rem">
           <div class="tick">
             <div><div class="tick-lbl">BTC/USD</div><div class="tick-val" id="tBtcUsd">—</div></div>
             <div class="tick-chg" id="tBtcChg">—</div>
@@ -254,7 +239,58 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--bod
           </div>
         </div>
 
+        <!-- Saldos -->
+        <div class="bal-grid">
+          <div class="bal-card">
+            <div class="bal-lbl">Bipa BRL</div>
+            <div class="bal-val" id="hBipaBRL">—</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-lbl">Bipa S$</div>
+            <div class="bal-val bl" id="hBipaSAT">—</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-lbl">HW (Ledger)</div>
+            <div class="bal-val bl" id="hHW">—</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-lbl">RedotPay</div>
+            <div class="bal-val bl" id="hRedot">—</div>
+          </div>
+          <div class="bal-card full">
+            <div class="bal-lbl">Patrimônio estimado</div>
+            <div class="bal-val gr" id="hPatrimonio" style="font-size:22px">—</div>
+            <div class="bal-sub">SAT × BTC/BRL + Bipa BRL</div>
+          </div>
+        </div>
+
+        <!-- Resumo do mês -->
+        <div class="bal-grid" style="padding-top:.75rem">
+          <div class="bal-card">
+            <div class="bal-lbl">Créditos do mês</div>
+            <div class="bal-val gr" id="hMesCr">—</div>
+            <div class="bal-sub" id="hMesNome">—</div>
+          </div>
+          <div class="bal-card">
+            <div class="bal-lbl">Débitos do mês</div>
+            <div class="bal-val" style="color:var(--rd)" id="hMesDb">—</div>
+          </div>
+          <div class="bal-card full">
+            <div class="bal-lbl">Saldo do mês</div>
+            <div class="bal-val" id="hMesSaldo">—</div>
+          </div>
+        </div>
+
+        <!-- Gráfico 6 meses -->
         <div class="card gap">
+          <div class="btc-hdr">
+            <span class="sec-ttl">Últimos 6 meses — Déb vs Créd</span>
+          </div>
+          <div class="chart-wrap" style="height:160px"><canvas id="chartBar"></canvas></div>
+        </div>
+
+        <!-- Gráfico BTC -->
+        <div class="card">
           <div class="btc-hdr">
             <span class="sec-ttl">BTC — 30 dias</span>
             <span class="btc-chg" id="btcChgBadge" style="display:none"></span>
@@ -542,20 +578,78 @@ function showTab(name){
 }
 
 // ── HOME ───────────────────────────────────────────────────
+let _chartBar=null;
+
 function renderHome(){
   document.getElementById('homeLoad').style.display='none';
   document.getElementById('homeBody').style.display='block';
 
-  // Sums from sheet columns H-K
+  // Saldos (colunas H-K)
   let bipaBRL=0, bipaSAT=0, hw=0, redot=0;
   cachedRows.forEach(r=>{
     bipaBRL+=parseVal(r[7]); bipaSAT+=parseVal(r[8]);
-    hw+=parseVal(r[9]);     redot+=parseVal(r[10]);
+    hw+=parseVal(r[9]);      redot+=parseVal(r[10]);
   });
   _bipaBRL=bipaBRL; _totalSAT=bipaSAT+hw+redot;
   document.getElementById('hBipaBRL').textContent=fBRL(bipaBRL);
-  document.getElementById('hTotalSAT').textContent=fNum(_totalSAT)+' S$';
+  document.getElementById('hBipaSAT').textContent=fNum(bipaSAT)+' S$';
+  document.getElementById('hHW').textContent=fNum(hw)+' S$';
+  document.getElementById('hRedot').textContent=fNum(redot)+' S$';
   updatePatrimonio();
+
+  // Resumo do mês atual
+  const now=new Date(), cm=now.getMonth(), cy=now.getFullYear();
+  let mesCr=0, mesDb=0;
+  cachedRows.forEach(r=>{
+    const rd=parseDate(r[0]);
+    if(rd&&!isNaN(rd)&&rd.getMonth()===cm&&rd.getFullYear()===cy){
+      mesCr+=parseVal(r[6]); mesDb+=Math.abs(parseVal(r[5]));
+    }
+  });
+  const MO=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('hMesCr').textContent=fBRL(mesCr);
+  document.getElementById('hMesDb').textContent=fBRL(mesDb);
+  document.getElementById('hMesNome').textContent=MO[cm]+' '+cy;
+  const saldo=mesCr-mesDb;
+  const selEl=document.getElementById('hMesSaldo');
+  selEl.textContent=fBRL(saldo);
+  selEl.style.color=saldo>=0?'var(--gr)':'var(--rd)';
+
+  // Gráfico 6 meses
+  buildBarChart(now);
+
+  // Últimos lançamentos
+  const sorted=[...cachedRows].sort((a,b)=>(parseDate(b[0])||0)-(parseDate(a[0])||0));
+  const container=document.getElementById('recentList');
+  if(!sorted.length){ container.innerHTML='<div class="empty">Nenhum lançamento ainda.</div>'; return; }
+  container.innerHTML=sorted.slice(0,8).map(r=>txnRow(r)).join('');
+}
+
+function buildBarChart(now){
+  const labs=[], debs=[], creds=[];
+  const MO=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    labs.push(MO[d.getMonth()]+'/'+String(d.getFullYear()).slice(2));
+    let dv=0, cv=0;
+    cachedRows.forEach(r=>{
+      const rd=parseDate(r[0]);
+      if(rd&&!isNaN(rd)&&rd.getMonth()===d.getMonth()&&rd.getFullYear()===d.getFullYear()){
+        dv+=Math.abs(parseVal(r[5])); cv+=parseVal(r[6]);
+      }
+    });
+    debs.push(Math.round(dv)); creds.push(Math.round(cv));
+  }
+  if(_chartBar) _chartBar.destroy();
+  _chartBar=new Chart(document.getElementById('chartBar'),{
+    type:'bar',
+    data:{labels:labs,datasets:[
+      {label:'Créditos',data:creds,backgroundColor:'#00c97b',borderRadius:4,borderSkipped:false},
+      {label:'Débitos', data:debs, backgroundColor:'#ff5c5c',borderRadius:4,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#555',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}}}
+  });
+}
 
   // Recent (last 8, sorted by date desc)
   const sorted=[...cachedRows].sort((a,b)=>(parseDate(b[0])||0)-(parseDate(a[0])||0));
