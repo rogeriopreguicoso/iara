@@ -408,6 +408,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--bod
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 const SCOPE='https://www.googleapis.com/auth/spreadsheets';
 const MO=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
