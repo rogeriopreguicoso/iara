@@ -1,0 +1,25 @@
+{
+  "name": "Fluxo de Caixa",
+  "short_name": "Caixa",
+  "description": "Controle de fluxo de caixa pessoal",
+  "start_url": "/iara/",
+  "scope": "/iara/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
